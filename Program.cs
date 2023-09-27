@@ -13,7 +13,7 @@ builder.Services.AddAuthentication().AddMicrosoftIdentityWebApi(builder.Configur
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AAD", new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
+        .RequireRole(builder.Configuration["AAD:ReaderRoleName"] ?? throw new ApplicationException("No AAD Role configured"))
         .AddAuthenticationSchemes("AAD")
         .Build());
     options.AddPolicy("B2C", new AuthorizationPolicyBuilder()
@@ -26,22 +26,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSecurityRequirement(
-                        new OpenApiSecurityRequirement
-                        {
-                            {
-                                new OpenApiSecurityScheme
-                                {
-                                    Name = nameof(SecuritySchemeType.OAuth2),
-                                    Reference = new OpenApiReference
-                                    {
-                                        Type = ReferenceType.SecurityScheme,
-                                        Id = "AAD"
-                                    }
-                                },
-                                new List<string>()
-                            }
-                        });
     options.AddSecurityRequirement(
     new OpenApiSecurityRequirement
     {
@@ -57,26 +41,6 @@ builder.Services.AddSwaggerGen(options =>
                                 },
                                 new List<string>()
                             }
-    });
-    options.AddSecurityDefinition("AAD", new OpenApiSecurityScheme
-    {
-        Name = HeaderNames.Authorization,
-        Type = SecuritySchemeType.OAuth2,
-        Scheme = "AAD",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Flows = new OpenApiOAuthFlows
-        {
-            Implicit = new OpenApiOAuthFlow
-            {
-                AuthorizationUrl = new Uri(
-                                        $"{builder.Configuration["AAD:Instance"]}/{builder.Configuration["AAD:Domain"]}/oauth2/v2.0/authorize"),
-                Scopes = new Dictionary<string, string>
-                                    {
-                                        { builder.Configuration["AAD:Scope"] ?? "", builder.Configuration["AAD:Scope"] ?? "" }
-                                    }
-            }
-        },
     });
     options.AddSecurityDefinition("B2C", new OpenApiSecurityScheme
     {
